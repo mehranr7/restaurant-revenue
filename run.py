@@ -1,8 +1,11 @@
 import pandas as pd # CSV file I/O
+import numpy as np
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, OneHotEncoder 
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
+from sklearn.neighbors import KNeighborsRegressor
 from datetime import date
 from datetime import datetime
 
@@ -41,13 +44,26 @@ x_train_cat = x_train.select_dtypes(include=("object"))
 num_pipeline = Pipeline([("imputer", SimpleImputer(strategy="median")),
                          ("scaler", StandardScaler())])
 
-
 # combine numeric data and categorical data using encoder
 num_features_name = list(x_train_num.columns)
 full_pipeline = ColumnTransformer([("num features", num_pipeline, num_features_name),
                                    ("ordinal encoding", OrdinalEncoder(), ["City Group"]),
                                    ("one hot encoding", OneHotEncoder(), ["Type"])])
 
-
 # fit data using the pipeline
 x_train_preprocessed = full_pipeline.fit_transform(x_train)
+
+# use KNN to fit the data
+model = KNeighborsRegressor()
+model.fit(x_train_preprocessed,y_train)
+
+# predict and measure metrics
+pred = model.predict(x_train_preprocessed)
+mse = mean_squared_error(y_train, pred)
+rmse = np.sqrt(mean_squared_error(y_train, pred))
+score = r2_score(y_train, pred)
+
+# print metrics
+print(f"mse on training data: {mse}")
+print(f"rmse on training data: {rmse}")
+print(f"r2_score: {score}")
