@@ -1,5 +1,8 @@
 import pandas as pd # CSV file I/O
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, OneHotEncoder 
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 from datetime import date
 from datetime import datetime
 
@@ -27,3 +30,24 @@ def date_to_days(date_list):
 # convert date to days
 x_train = date_to_days(x_train)
 
+# remove unneccessary data
+x_train = x_train.drop(["Id", "City"], axis=1)
+
+# separate numeric and non-numeric data
+x_train_num = x_train.select_dtypes(include=("int64", "float64"))
+x_train_cat = x_train.select_dtypes(include=("object"))
+
+# impute and scale the numeric data
+num_pipeline = Pipeline([("imputer", SimpleImputer(strategy="median")),
+                         ("scaler", StandardScaler())])
+
+
+# combine numeric data and categorical data using encoder
+num_features_name = list(x_train_num.columns)
+full_pipeline = ColumnTransformer([("num features", num_pipeline, num_features_name),
+                                   ("ordinal encoding", OrdinalEncoder(), ["City Group"]),
+                                   ("one hot encoding", OneHotEncoder(), ["Type"])])
+
+
+# fit data using the pipeline
+x_train_preprocessed = full_pipeline.fit_transform(x_train)
